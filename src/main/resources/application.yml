@@ -1,12 +1,10 @@
 spring:
   # H2 Database 설정
-  datasource:
-    driver-class-name: org.h2.Driver
-#    url: 'jdbc:h2:mem:sparta-plus;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE'   # H2 DB 연결 주소 (In-Memory Mode)
-    url: 'jdbc:h2:tcp://localhost/~/h2db/sparta-spring-plus'    # H2 DB 연결 주소 (TCP Mode)
-#    url: 'jdbc:h2:~/h2db/sparta-spring-plus'    # H2 DB 연결 주소 (Embedded Mode)
-    username: sa        # H2 DB 접속 ID (사용자 지정)
-    password:        # H2 DB 접속 PW (사용자 지정)
+  datasource:  # H2 DB 접속 PW (사용자 지정)
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/sparta-plus
+    username: root
+    password: 1234
   jpa:
     hibernate:
       ddl-auto: create
