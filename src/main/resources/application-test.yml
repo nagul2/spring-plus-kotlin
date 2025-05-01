@@ -14,3 +14,7 @@ spring:
         format_sql: true
         show-sql: true
         highlight_sql: true
+
+jwt:
+  secret:
+    key: Z+DaMKeNGsNzIFgMwnvqgfdUus+oTS9nlNN+lKw4R4I=
