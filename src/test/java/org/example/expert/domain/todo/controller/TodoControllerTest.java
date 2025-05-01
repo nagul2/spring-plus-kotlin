@@ -1,6 +1,6 @@
 package org.example.expert.domain.todo.controller;
 
-import org.example.expert.domain.common.dto.AuthUser;
+import org.example.expert.domain.auth.security.CustomUserDetails;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.service.TodoService;
@@ -9,19 +9,24 @@ import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.enums.UserRole;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(TodoController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class TodoControllerTest {
 
     @Autowired
@@ -35,9 +40,20 @@ class TodoControllerTest {
         // given
         long todoId = 1L;
         String title = "title";
-        AuthUser authUser = new AuthUser(1L, "email", UserRole.USER, "nickname");
-        User user = User.fromAuthUser(authUser);
-        UserResponse userResponse = new UserResponse(user.getId(), user.getEmail(), user.getNickname());
+
+        User mockUser = mock(User.class);
+        when(mockUser.getId()).thenReturn(1L);
+        when(mockUser.getEmail()).thenReturn("email@example.com");
+        when(mockUser.getPassword()).thenReturn("encodedPw");
+        when(mockUser.getNickname()).thenReturn("nickname");
+        when(mockUser.getUserRole()).thenReturn(UserRole.USER);
+
+        CustomUserDetails userDetails = new CustomUserDetails(mockUser);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())
+        );
+
+        UserResponse userResponse = new UserResponse(mockUser.getId(), mockUser.getEmail(), mockUser.getNickname());
         TodoResponse response = new TodoResponse(
                 todoId,
                 title,

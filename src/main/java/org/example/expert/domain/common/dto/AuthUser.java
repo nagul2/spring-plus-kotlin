@@ -1,3 +1,7 @@
+/*
+
+Spring Security 변경
+
 package org.example.expert.domain.common.dto;
 
 import lombok.Getter;
@@ -19,3 +23,4 @@ public class AuthUser {
 
     }
 }
+*/

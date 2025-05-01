@@ -1,3 +1,7 @@
+/*
+
+Spring Security 대체
+
 package org.example.expert.config;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,3 +49,4 @@ public class AuthUserArgumentResolver implements HandlerMethodArgumentResolver {
         return new AuthUser(userId, email, userRole, nickname);
     }
 }
+*/
