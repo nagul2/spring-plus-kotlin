@@ -9,6 +9,6 @@ import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    @Query("SELECT c FROM Comment c JOIN c.user WHERE c.todo.id = :todoId")
+    @Query("select c from Comment c join fetch c.user where c.todo.id = :todoId")
     List<Comment> findByTodoIdWithUser(@Param("todoId") Long todoId);
 }
