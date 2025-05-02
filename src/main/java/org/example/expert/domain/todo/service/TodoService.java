@@ -6,13 +6,16 @@ import org.example.expert.domain.auth.security.CustomUserDetails;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
+import org.example.expert.domain.todo.dto.response.TodoTitleResponse;
 import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
+import org.example.expert.domain.todo.service.dto.TodoTitleSearchDto;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,5 +84,13 @@ public class TodoService {
                 todo.getCreatedAt(),
                 todo.getModifiedAt()
         );
+    }
+
+    public Page<TodoTitleResponse> searchTodosTitles(TodoTitleSearchDto searchDto, int page, int size) {
+        if (page < 1) page = 1;
+        if (size > 50 || size < 1) size = 10;
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        return todoRepository.searchTodoTitles(searchDto, pageable);
     }
 }

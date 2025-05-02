@@ -1,10 +1,9 @@
 spring:
-  # H2 Database 설정
-  datasource:  # H2 DB 접속 PW (사용자 지정)
+  datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/sparta-plus
-    username: root
-    password: 1234
+    username: ${DB_ID}
+    password: ${DB_PW}
   jpa:
     hibernate:
       ddl-auto: update
