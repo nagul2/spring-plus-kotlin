@@ -1,8 +1,13 @@
 package org.example.expert.domain.manager.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.expert.domain.auth.security.CustomUserDetails;
 import org.example.expert.domain.common.exception.InvalidRequestException;
+import org.example.expert.domain.log.entity.DomainType;
+import org.example.expert.domain.log.entity.Log;
+import org.example.expert.domain.log.entity.LogStatus;
+import org.example.expert.domain.log.service.LogService;
 import org.example.expert.domain.manager.dto.request.ManagerSaveRequest;
 import org.example.expert.domain.manager.dto.response.ManagerResponse;
 import org.example.expert.domain.manager.dto.response.ManagerSaveResponse;
@@ -19,7 +24,9 @@ import org.springframework.util.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -29,26 +36,48 @@ public class ManagerService {
     private final UserRepository userRepository;
     private final TodoRepository todoRepository;
 
+    private final LogService logService;
+
     @Transactional
     public ManagerSaveResponse saveManager(CustomUserDetails userDetails, long todoId, ManagerSaveRequest managerSaveRequest) {
+
         // 일정을 만든 유저
         User user = User.fromAuthUser(userDetails.getUser());
-        Todo todo = todoRepository.findById(todoId)
-                .orElseThrow(() -> new InvalidRequestException("Todo not found"));
+        Optional<Todo> findOptTodo = todoRepository.findById(todoId);
+        if (findOptTodo.isEmpty()) {
+            Log saveLog = logService.failLogSave(new Log("saveManager", DomainType.MANAGER, LogStatus.FAIL));
+            log.info("methodName: {}, domain: {}, 로깅 시각: {}", saveLog.getMethodName(), saveLog.getType(), saveLog.getCreateBy());
+            throw new InvalidRequestException("Todo not found");
+        }
+
+        Todo todo = findOptTodo.get();
 
         if (todo.getUser() == null || !ObjectUtils.nullSafeEquals(user.getId(), todo.getUser().getId())) {
+            Log saveLog = logService.failLogSave(new Log("saveManager", DomainType.MANAGER, LogStatus.FAIL));
+            log.info("methodName: {}, domain: {}, 로깅 시각: {}", saveLog.getMethodName(), saveLog.getType(), saveLog.getCreateBy());
             throw new InvalidRequestException("담당자를 등록하려고 하는 유저가 유효하지 않거나, 일정을 만든 유저가 아닙니다.");
         }
 
-        User managerUser = userRepository.findById(managerSaveRequest.getManagerUserId())
-                .orElseThrow(() -> new InvalidRequestException("등록하려고 하는 담당자 유저가 존재하지 않습니다."));
+        Optional<User> findOptUser = userRepository.findById(managerSaveRequest.getManagerUserId());
+        if (findOptUser.isEmpty()) {
+            Log saveLog = logService.failLogSave(new Log("saveManager", DomainType.MANAGER, LogStatus.FAIL));
+            log.info("methodName: {}, domain: {}, 로깅 시각: {}", saveLog.getMethodName(), saveLog.getType(), saveLog.getCreateBy());
+            throw new InvalidRequestException("등록하려고 하는 담당자 유저가 존재하지 않습니다.");
+        }
+
+        User managerUser = findOptUser.get();
 
         if (ObjectUtils.nullSafeEquals(user.getId(), managerUser.getId())) {
+            Log saveLog = logService.failLogSave(new Log("saveManager", DomainType.MANAGER, LogStatus.FAIL));
+            log.info("methodName: {}, domain: {}, 로깅 시각: {}", saveLog.getMethodName(), saveLog.getType(), saveLog.getCreateBy());
             throw new InvalidRequestException("일정 작성자는 본인을 담당자로 등록할 수 없습니다.");
         }
 
         Manager newManagerUser = new Manager(managerUser, todo);
         Manager savedManagerUser = managerRepository.save(newManagerUser);
+
+        Log saveLog = logService.successLogSave(new Log("saveManager", DomainType.MANAGER, LogStatus.SUCCESS));
+        log.info("methodName: {}, domain: {}, 로깅 시각: {}", saveLog.getMethodName(), saveLog.getType(), saveLog.getCreateBy());
 
         return new ManagerSaveResponse(
                 savedManagerUser.getId(),
