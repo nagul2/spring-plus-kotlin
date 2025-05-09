@@ -59,6 +59,57 @@
 - spring data JPA를 활용하였고 repository 에서 @Transactional(propagation = Propagation.REQUIRES_NEW)을 사용하는 것은 좋지 않은 설계같아서 LogService에서 트랜잭션을 적용하고, 로그 성공과 실패 메서드를 각각 만들어서 적용하였음
 
 #### 12. AWS 활용
+- 인프라 구조
+![인프라 구조](readme_image/infra.png)
+
+
+1. 도메인 설정 스크린 샷
+- 도메인을 구입하여 Route 53, 가비아 DNS 설정완료
+- Alias 레코드를 생성하여 구입한 도메인으로 로드벨런서에 접근하도록 설정
+![가비아 DNS 설정 이미지](readme_image/gabia.png)
+![Route 53 스크린샷](readme_image/route53.png  )
+
+
+2. 탄력적 IP 스크린샷
+- SSH 접속 시 EC2가 재부팅 되었을 때 IP가 변경되지 않도록 하기 위함
+![탄력적 IP 스크린샷](readme_image/elastic_ip.png)
+![ssh접속 스크린샷](readme_image/ssh.png)
+
+
+3. EC2 설정 스크린샷
+- S3에 접근 및 제어를 위한 IAM 역할 부여
+- 인바운드 규칙에 SSH, 로드밸런서 http 내부 통신 허용
+- 아웃바운드 규칙에 rds 통신 허용
+![EC2 인스턴스 요약](readme_image/ec2_instance.png)
+![EC2 세부정보](readme_image/ec2_detail.png)
+![EC2 보안그룹1](readme_image/ec2_security1.png)
+![EC2 보안그룹2](readme_image/ec2_security2.png)
+
+4. 로드 밸런서 설정 스크린샷
+- 단일 EC2 서버 아키텍처이지만 로드 밸런서를 통해 http 요청을 https로 리다이렉트 시키도록 설정
+- EC2와 http로 통신하고 외부 요청은 http는 https로 리다이렉트 하기 때문에 https만 통신됨
+![로드 밸런서 스크린샷](readme_image/alb.png)
+
+
+5. HTTPS 접속을 위한 SSL 인증서 발급 스크린샷
+- 구입한 도메인이 등록된 Route 53에 CNAME 레코드 생성
+![SSL 인증서](readme_image/ssl.png)
+
+
+6. RDS 설정 스크린샷
+- EC2 보안그룹 연결 설정 적용
+![RDS 설정1](readme_image/rds1.png)
+![RDS 설정2](readme_image/rds2.png)
+
+7. S3 설정 스크린샷 
+![S3](readme_image/s3.png)
+
+
+8. health check API 개발
+
+
+9. 유저 프로필 이미지 업로드 및 관리 API 개발
+
 
 #### 13. 대용량 데이터 처리 - 절대 로컬에서 실행할 것, 천만 ~ 1억건 정도
 
