@@ -6,8 +6,10 @@ import lombok.Getter;
 public class SignupResponse {
 
     private final String bearerToken;
+    private final String profileImageUrl;
 
-    public SignupResponse(String bearerToken) {
+    public SignupResponse(String bearerToken, String profileImageUrl) {
         this.bearerToken = bearerToken;
+        this.profileImageUrl = profileImageUrl;
     }
 }

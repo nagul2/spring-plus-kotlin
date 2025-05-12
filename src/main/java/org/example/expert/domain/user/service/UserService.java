@@ -28,7 +28,7 @@ public class UserService {
         Image findImage = imageRepository.findByUserAndType(user, ImageType.PROFILE)
                 .orElseThrow(() -> new InvalidRequestException("find user profile Image, userId: " + user.getId()));
 
-        return new UserResponse(user.getId(), user.getEmail(), user.getNickname(), findImage.getImageUrl());
+        return new UserResponse(user.getId(), user.getEmail(), user.getNickname());
     }
 
     @Transactional
