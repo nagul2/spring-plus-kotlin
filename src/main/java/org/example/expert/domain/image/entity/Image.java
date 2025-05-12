@@ -1,14 +1,10 @@
 package org.example.expert.domain.image.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.expert.domain.common.entity.Timestamped;
 import org.example.expert.domain.user.entity.User;
-
-import static kotlin.reflect.jvm.internal.impl.metadata.deserialization.ProtoTypeTableUtilKt.type;
 
 @Getter
 @Entity
