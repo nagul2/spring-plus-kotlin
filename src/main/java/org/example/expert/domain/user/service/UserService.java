@@ -2,6 +2,9 @@ package org.example.expert.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.expert.domain.common.exception.InvalidRequestException;
+import org.example.expert.domain.image.entity.Image;
+import org.example.expert.domain.image.entity.ImageType;
+import org.example.expert.domain.image.repository.ImageRepository;
 import org.example.expert.domain.user.dto.request.UserChangePasswordRequest;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
@@ -16,11 +19,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ImageRepository imageRepository;
     private final PasswordEncoder passwordEncoder;
 
     public UserResponse getUser(long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new InvalidRequestException("User not found"));
-        return new UserResponse(user.getId(), user.getEmail(), user.getNickname());
+
+        Image findImage = imageRepository.findByUserAndType(user, ImageType.PROFILE)
+                .orElseThrow(() -> new InvalidRequestException("find user profile Image, userId: " + user.getId()));
+
+        return new UserResponse(user.getId(), user.getEmail(), user.getNickname(), findImage.getImageUrl());
     }
 
     @Transactional

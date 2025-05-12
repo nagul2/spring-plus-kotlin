@@ -12,6 +12,7 @@ import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
+import org.example.expert.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,10 +26,14 @@ public class CommentService {
 
     private final TodoRepository todoRepository;
     private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public CommentSaveResponse saveComment(CustomUserDetails userDetails, long todoId, CommentSaveRequest commentSaveRequest) {
-        User user = User.fromAuthUser(userDetails.getUser());
+
+        User user = userRepository.findById(userDetails.getUser().getId()).orElseThrow(() ->
+                new InvalidRequestException("User not found"));
+
         Todo todo = todoRepository.findById(todoId).orElseThrow(() ->
                 new InvalidRequestException("Todo not found"));
 

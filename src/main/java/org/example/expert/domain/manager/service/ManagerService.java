@@ -41,8 +41,9 @@ public class ManagerService {
     @Transactional
     public ManagerSaveResponse saveManager(CustomUserDetails userDetails, long todoId, ManagerSaveRequest managerSaveRequest) {
 
-        // 일정을 만든 유저
-        User user = User.fromAuthUser(userDetails.getUser());
+        User user = userRepository.findById(userDetails.getUser().getId()).orElseThrow(() ->
+                new InvalidRequestException("User not found"));
+
         Optional<Todo> findOptTodo = todoRepository.findById(todoId);
         if (findOptTodo.isEmpty()) {
             Log saveLog = logService.failLogSave(new Log("saveManager", DomainType.MANAGER, LogStatus.FAIL));
@@ -104,7 +105,8 @@ public class ManagerService {
 
     @Transactional
     public void deleteManager(CustomUserDetails userDetails, long todoId, long managerId) {
-        User user = User.fromAuthUser(userDetails.getUser());
+        User user = userRepository.findById(userDetails.getUser().getId()).orElseThrow(() ->
+                new InvalidRequestException("User not found"));
 
         Todo todo = todoRepository.findById(todoId)
                 .orElseThrow(() -> new InvalidRequestException("Todo not found"));

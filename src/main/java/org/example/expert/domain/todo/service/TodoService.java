@@ -3,6 +3,7 @@ package org.example.expert.domain.todo.service;
 import lombok.RequiredArgsConstructor;
 import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.auth.security.CustomUserDetails;
+import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
@@ -12,10 +13,10 @@ import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.todo.service.dto.TodoTitleSearchDto;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
+import org.example.expert.domain.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +28,13 @@ import java.time.LocalDateTime;
 public class TodoService {
 
     private final TodoRepository todoRepository;
+    private final UserRepository userRepository;
     private final WeatherClient weatherClient;
 
     @Transactional
     public TodoSaveResponse saveTodo(CustomUserDetails userDetails, TodoSaveRequest todoSaveRequest) {
-        User user = User.fromAuthUser(userDetails.getUser());
+        User user = userRepository.findById(userDetails.getUser().getId()).orElseThrow(() ->
+                new InvalidRequestException("User not found"));
 
         String weather = weatherClient.getTodayWeather();
 

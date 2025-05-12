@@ -1,6 +1,7 @@
 package org.example.expert.domain.user.dto.response;
 
 import lombok.Getter;
+import org.example.expert.domain.image.entity.Image;
 
 @Getter
 public class UserResponse {
