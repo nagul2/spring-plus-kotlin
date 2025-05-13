@@ -1,0 +1,45 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Grant execute permission for Gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew clean bootJar
+
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Copy JAR to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no \
+            ./build/libs/spring-plus-kotlin-0.0.1-SNAPSHOT.jar \
+            ubuntu@${{ secrets.EC2_HOST }}:~/app.jar
+
+      - name: Deploy and Run on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            pkill -f 'java -jar' || true
+            export DB_ID=${{ secrets.DB_ID }}
+            export DB_PW=${{ secrets.DB_PW }}
+            export JWT_SECRETKEY=${{ secrets.JWT_SECRETKEY }}
+            nohup java -jar ~/app.jar --spring.profiles.active=dev > app.log 2>&1 &
