@@ -1,10 +1,14 @@
 name: Deploy to EC2
-on: [push]
+on:
+  push:
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+    # ───────────────────────────── 소스 & JDK ─────────────────────────────
     - uses: actions/checkout@v3
 
     - uses: actions/setup-java@v3
@@ -13,32 +17,48 @@ jobs:
         java-version: 17
 
     - run: chmod +x ./gradlew
-    - run: ./gradlew clean bootJar
+    - run: ./gradlew clean bootJar        # build/libs/…jar 생성
 
-    # ──────────────────────────── SSH 준비
-    - name: Prepare SSH key
+    # ───────────────────────────── SSH 키 준비 ────────────────────────────
+    # ①  base64 로 저장해 둔 시크릿을 파일로 복호화
+    - name: Write EC2 key
       run: |
         echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 -d > ec2_key.pem
         chmod 600 ec2_key.pem
+
+    # ②  에이전트에 적재 –> fingerprint 가 찍혀야 “키 OK”
+    - name: Add key to agent
+      run: |
         eval "$(ssh-agent -s)"
         ssh-add ec2_key.pem
-        echo "🔑  키 목록 ↓"
-        ssh-add -l                      # ← 여기서 fingerprint 안 나오면 키가 깨진 것!
+        echo "🔑 현재 로드된 키:"
+        ssh-add -l
 
-    # ──────────────────────────── 파일 복사 (scp -vvv 로 문제 즉시 확인)
+    # ───────────────────────────── jar 복사 ───────────────────────────────
     - name: Copy JAR to EC2
       run: |
         ls -lh build/libs
-        scp -vvv -C -o StrictHostKeyChecking=no \
-            build/libs/*.jar  ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app.jar
+        scp -C  -o StrictHostKeyChecking=no \
+            -i ec2_key.pem               \            # ← 키 직접 지정
+            build/libs/*.jar \
+            ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app.jar
 
-    # ──────────────────────────── 원격 실행
+    # ───────────────────────────── 원격 실행 ──────────────────────────────
     - name: Deploy & run
       run: |
-        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} <<'EOS'
+        ssh -i ec2_key.pem -o StrictHostKeyChecking=no \
+            ubuntu@${{ secrets.EC2_HOST }} << 'EOS'
           pkill -f 'java -jar' || true
-          export DB_ID="${{ secrets.DB_ID }}"
-          export DB_PW="${{ secrets.DB_PW }}"
-          export JWT_SECRETKEY="${{ secrets.JWT_SECRETKEY }}"
-          nohup java -jar /home/ubuntu/app.jar --spring.profiles.active=dev > app.log 2>&1 &
+
+          export DB_ID="${DB_ID}"
+          export DB_PW="${DB_PW}"
+          export JWT_SECRETKEY="${JWT_SECRETKEY}"
+
+          nohup java -jar /home/ubuntu/app.jar \
+                --spring.profiles.active=dev \
+                > app.log 2>&1 &
         EOS
+      env:                       # ← 원격 쉘에서 바로 쓸 수 있게 전달
+        DB_ID:         ${{ secrets.DB_ID }}
+        DB_PW:         ${{ secrets.DB_PW }}
+        JWT_SECRETKEY: ${{ secrets.JWT_SECRETKEY }}
