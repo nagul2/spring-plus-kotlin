@@ -28,7 +28,7 @@ public class ImageService {
     private final ImageRepository imageRepository;
     private final UserRepository userRepository;
 
-    @Value("${default-image.profile}")
+    @Value("${default-image.profile.path}")
     private String defaultProfile;
 
     @Transactional
