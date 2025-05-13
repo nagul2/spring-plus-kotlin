@@ -8,46 +8,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # ───────────────────────────── 소스 & JDK ─────────────────────────────
+    # ───────────────────────────── 소스 & JAR ─────────────────────────────
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-java@v3
+    - uses: actions/setup-java@v3          # JDK 17
       with:
         distribution: temurin
         java-version: 17
 
     - run: chmod +x ./gradlew
-    - run: ./gradlew clean bootJar        # build/libs/…jar 생성
+    - run: ./gradlew clean bootJar          # build/libs/*.jar 생성
 
-    # ───────────────────────────── SSH 키 준비 ────────────────────────────
-    # ①  base64 로 저장해 둔 시크릿을 파일로 복호화
-    - name: Write EC2 key
-      run: |
-        echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 -d > ec2_key.pem
-        chmod 600 ec2_key.pem
+    # ───────────────────────────── SSH 키 (**그냥 PEM 원문** 시크릿) ──────
+    #  *GitHub Secrets → EC2_SSH_KEY 에 “-----BEGIN RSA PRIVATE KEY … END RSA PRIVATE KEY-----” 그대로 넣는다*  
+    - name: Load EC2 key
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-    # ②  에이전트에 적재 –> fingerprint 가 찍혀야 “키 OK”
-    - name: Add key to agent
-      run: |
-        eval "$(ssh-agent -s)"
-        ssh-add ec2_key.pem
-        echo "🔑 현재 로드된 키:"
-        ssh-add -l
-
-    # ───────────────────────────── jar 복사 ───────────────────────────────
+    # ───────────────────────────── JAR 전송 ───────────────────────────────
     - name: Copy JAR to EC2
       run: |
-        ls -lh build/libs
-        scp -C  -o StrictHostKeyChecking=no \
-            -i ec2_key.pem               \            # ← 키 직접 지정
-            build/libs/*.jar \
-            ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app.jar
+        scp -o StrictHostKeyChecking=no \
+            build/libs/*.jar  ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app.jar
 
     # ───────────────────────────── 원격 실행 ──────────────────────────────
-    - name: Deploy & run
+    - name: Restart App on EC2
       run: |
-        ssh -i ec2_key.pem -o StrictHostKeyChecking=no \
-            ubuntu@${{ secrets.EC2_HOST }} << 'EOS'
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} <<'EOS'
           pkill -f 'java -jar' || true
 
           export DB_ID="${DB_ID}"
@@ -58,7 +46,7 @@ jobs:
                 --spring.profiles.active=dev \
                 > app.log 2>&1 &
         EOS
-      env:                       # ← 원격 쉘에서 바로 쓸 수 있게 전달
+      env:           # 시크릿을 원격 셸로 전달
         DB_ID:         ${{ secrets.DB_ID }}
         DB_PW:         ${{ secrets.DB_PW }}
         JWT_SECRETKEY: ${{ secrets.JWT_SECRETKEY }}
