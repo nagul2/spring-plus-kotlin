@@ -13,6 +13,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Grant execute permission for Gradlew
         run: chmod +x ./gradlew
 
@@ -26,15 +32,16 @@ jobs:
 
       - name: Copy JAR to EC2
         run: |
-          scp -o StrictHostKeyChecking=no ./build/libs/spring-plus-kotlin-0.0.1-SNAPSHOT.jar ubuntu@${{ secrets.EC2_HOST }}:~/app.jar
-    
+          scp -o StrictHostKeyChecking=no \
+            build/libs/*.jar \
+            ubuntu@${{ secrets.EC2_HOST }}:~/app.jar
+
       - name: Deploy and Run on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
           script: |
             pkill -f 'java -jar' || true
             export DB_ID=${{ secrets.DB_ID }}
