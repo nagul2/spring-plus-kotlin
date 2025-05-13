@@ -18,8 +18,7 @@ public class ImageController {
     @PutMapping("/profile")
     public ResponseEntity<String> updateUserProfileImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            MultipartFile file
-            ) {
+            @RequestParam MultipartFile file) {
 
         String url = imageService.updateUserProfileImage(userDetails, file);
         return ResponseEntity.ok(url);

@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ImageService {
 
     public static final String PROFILE_DIR_NAME = "profile";
+    public static final String DEFAULT = "default";
 
     private final StorageService storageService;
     private final ImageRepository imageRepository;
@@ -34,6 +35,7 @@ public class ImageService {
     public String saveUserProfileImage(User user, MultipartFile file) {
 
         if (file == null || file.isEmpty()) {
+            imageRepository.save(Image.createProfile(user, DEFAULT, DEFAULT, defaultProfile, DEFAULT, 0));
             return defaultProfile;
         }
         UploadResultDto uploadResult = storageService.upload(file, PROFILE_DIR_NAME);
