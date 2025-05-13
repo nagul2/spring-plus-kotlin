@@ -28,6 +28,7 @@ cloud:
       bucket: sparta-image-bucket
       url: https://sparta-image-bucket.s3.ap-northeast-2.amazonaws.com
 
+
 default-image:
   profile:
     path: https://sparta-image-bucket.s3.ap-northeast-2.amazonaws.com/profile/defaultprofile.jpeg
