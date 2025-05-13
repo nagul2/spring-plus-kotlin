@@ -43,9 +43,11 @@ jobs:
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no \
             ubuntu@${{ secrets.EC2_HOST }} <<EOF
               pkill -f 'java -jar' || true
-              DB_ID="${{ secrets.DB_ID }}" \
-              DB_PW="${{ secrets.DB_PW }}" \
-              JWT_SECRETKEY="${{ secrets.JWT_SECRETKEY }}" \
+          
+              export DB_ID="${{ secrets.DB_ID }}"
+              export DB_PW="${{ secrets.DB_PW }}"
+              export JWT_SECRETKEY="${{ secrets.JWT_SECRETKEY }}"
+          
               nohup java -jar /home/ubuntu/app.jar \
                 --spring.profiles.active=dev > app.log 2>&1 &
           EOF
