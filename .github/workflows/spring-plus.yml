@@ -32,7 +32,11 @@ jobs:
 
       - name: Copy JAR to EC2
         run: |
-          scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/*.jar ubuntu@${{ secrets.EC2_HOST }}:~/app.jar
+          scp -o StrictHostKeyChecking=no \
+              -o BatchMode=yes \
+              -i ec2_key.pem \
+              build/libs/*.jar \
+              ubuntu@${{ secrets.EC2_HOST }}:~/app.jar
 
       - name: Deploy and Run on EC2
         run: |
