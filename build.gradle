@@ -66,6 +66,8 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     implementation "org.jetbrains.kotlin:kotlin-reflect"
 
+    // logback 수동 추가(코틀린 설정 때문에 중복)
+    implementation 'ch.qos.logback:logback-classic:1.4.14'
 
     // query-dsl
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
