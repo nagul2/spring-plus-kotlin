@@ -25,24 +25,21 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean bootJar
 
+      - name: Write PEM key from base64
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 -d > ec2_key.pem
+          chmod 600 ec2_key.pem
+
       - name: Copy JAR to EC2
-        uses: appleboy/scp-action@v0.1.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "build/libs/*.jar"
-          target: "~/app.jar"
+        run: |
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no build/libs/*.jar ubuntu@${{ secrets.EC2_HOST }}:~/app.jar
 
       - name: Deploy and Run on EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
             pkill -f 'java -jar' || true
             export DB_ID=${{ secrets.DB_ID }}
             export DB_PW=${{ secrets.DB_PW }}
             export JWT_SECRETKEY=${{ secrets.JWT_SECRETKEY }}
             nohup java -jar ~/app.jar --spring.profiles.active=dev > app.log 2>&1 &
+          EOF
