@@ -1,71 +1,44 @@
 name: Deploy to EC2
-
-on:
-  push:
-    branches: [ main ]
+on: [push]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-    # 1) 소스 내려받기
     - uses: actions/checkout@v3
 
-    # 2) JDK 17
     - uses: actions/setup-java@v3
       with:
         distribution: temurin
-        java-version: "17"
+        java-version: 17
 
-    # 3) Gradle 빌드
-    - name: Build JAR
-      run: |
-        chmod +x ./gradlew
-        ./gradlew clean bootJar
+    - run: chmod +x ./gradlew
+    - run: ./gradlew clean bootJar
 
-    # 4) ■ PEM 키를 Base64 → 파일 → ssh‑agent 등록
+    # ──────────────────────────── SSH 준비
     - name: Prepare SSH key
-      id: ssh-key
       run: |
-        echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 -d > ~/.ec2_key.pem
-        chmod 600 ~/.ec2_key.pem
+        echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 -d > ec2_key.pem
+        chmod 600 ec2_key.pem
         eval "$(ssh-agent -s)"
-        ssh-add ~/.ec2_key.pem
+        ssh-add ec2_key.pem
+        echo "🔑  키 목록 ↓"
+        ssh-add -l                      # ← 여기서 fingerprint 안 나오면 키가 깨진 것!
 
-    # 5) ■ JAR 전송 (‑vvv 로 상세 로그, 절대경로 사용)
+    # ──────────────────────────── 파일 복사 (scp -vvv 로 문제 즉시 확인)
     - name: Copy JAR to EC2
       run: |
-        ls -lh build/libs              # 로컬 JAR 확인
-        scp -vvv -C \
-          -o StrictHostKeyChecking=no \
-          build/libs/*.jar \
-          ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app.jar
+        ls -lh build/libs
+        scp -vvv -C -o StrictHostKeyChecking=no \
+            build/libs/*.jar  ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app.jar
 
-    # 6) ■ 원격에서 실행 + 로그·폴더 준비
-    - name: Deploy & run on EC2
+    # ──────────────────────────── 원격 실행
+    - name: Deploy & run
       run: |
-        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} <<'EOSSH'
-          set -e                          # 스크립트 에러 시 즉시 중단
-          cd /home/ubuntu
-
-          # 환경변수 export
-          echo "export DB_ID=${{ secrets.DB_ID }}"         >> ~/.bash_profile
-          echo "export DB_PW=${{ secrets.DB_PW }}"         >> ~/.bash_profile
-          echo "export JWT_SECRETKEY=${{ secrets.JWT_SECRETKEY }}" >> ~/.bash_profile
-          source ~/.bash_profile
-
-          # 이전 프로세스 종료
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} <<'EOS'
           pkill -f 'java -jar' || true
-
-          # (필요 시) java 설치 체크
-          if ! command -v java &>/dev/null; then
-              sudo apt-get update -y
-              sudo apt-get install -y openjdk-17-jdk
-          fi
-
-          # 새 프로세스 시작
-          nohup java -jar /home/ubuntu/app.jar \
-                --spring.profiles.active=dev > app.log 2>&1 &
-          echo "▶︎ SpringBoot restarted. Check with: tail -f app.log"
-        EOSSH
+          export DB_ID="${{ secrets.DB_ID }}"
+          export DB_PW="${{ secrets.DB_PW }}"
+          export JWT_SECRETKEY="${{ secrets.JWT_SECRETKEY }}"
+          nohup java -jar /home/ubuntu/app.jar --spring.profiles.active=dev > app.log 2>&1 &
+        EOS
