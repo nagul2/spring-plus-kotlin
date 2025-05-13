@@ -25,7 +25,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean bootJar
 
-      - name: Write PEM key from base64
+      - name: Decode EC2 SSH key
         run: |
           echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 -d > ec2_key.pem
           chmod 600 ec2_key.pem
@@ -36,10 +36,10 @@ jobs:
 
       - name: Deploy and Run on EC2
         run: |
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} <<EOF
+            export DB_ID="${{ secrets.DB_ID }}"
+            export DB_PW="${{ secrets.DB_PW }}"
+            export JWT_SECRETKEY="${{ secrets.JWT_SECRETKEY }}"
             pkill -f 'java -jar' || true
-            export DB_ID=${{ secrets.DB_ID }}
-            export DB_PW=${{ secrets.DB_PW }}
-            export JWT_SECRETKEY=${{ secrets.JWT_SECRETKEY }}
             nohup java -jar ~/app.jar --spring.profiles.active=dev > app.log 2>&1 &
           EOF
