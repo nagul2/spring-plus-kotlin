@@ -27,9 +27,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
+                .requiresChannel(channel -> channel.anyRequest().requiresSecure())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/h2-console/**", "/health/**", "/auth/signup").permitAll()
+                        .requestMatchers("/auth/**", "/h2-console/**", "/health/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class)
@@ -42,4 +43,6 @@ public class SecurityConfig {
         return (web) -> web.ignoring().requestMatchers(
                 PathRequest.toStaticResources().atCommonLocations());
     }
+
+
 }

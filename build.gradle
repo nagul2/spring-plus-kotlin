@@ -66,8 +66,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     implementation "org.jetbrains.kotlin:kotlin-reflect"
 
-    // logback 수동 추가(코틀린 설정 때문에 중복)
-    implementation 'ch.qos.logback:logback-classic:1.4.14'
+    // logback 수동 추가(코틀린 설정때문에 충돌이 된다고 하여 명시적으로 설정)
+    implementation("ch.qos.logback:logback-classic:1.4.14")  // 명시적으로 logback 제공
+    implementation("org.codehaus.janino:janino:3.1.12")      // CVE 패치
 
     // query-dsl
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
